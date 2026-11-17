@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Pro - Tu Espacio de Estudio</title>
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --primary-dark: #0284c7;
+            --bg: #090d16;
+            --card-bg: #111827;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #1f2937;
+            --gold: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; transition: background 0.3s, color 0.3s; }
+        
+        header { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            padding: 25px; 
+            background: var(--card-bg); 
+            border-radius: 14px; 
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .streak-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        .coins-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .coins-badge:hover { transform: scale(1.05); }
+
+        #coin-toast {
+            display: none;
+            position: fixed;
+            top: 25px;
+            right: 50%;
+            transform: translateX(50%);
+            background: var(--gold);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        header h1 { color: var(--accent); font-size: 1.9rem; margin-bottom: 5px; }
+        header p { color: var(--text-muted); font-size: 0.95rem; font-style: italic; letter-spacing: 0.5px; }
+        
+        .nav-tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.85rem; }
+        .tab-btn.active, .tab-btn:hover { background: var(--primary); border-color: var(--primary); color: white; }
+        
+        .section { display: none; background: var(--card-bg); padding: 25px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
+        .section.active { display: block; }
+        
+        h2 { color: var(--accent); margin-bottom: 15px; font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        h3 { color: var(--accent); margin: 20px 0 10px; font-size: 1.2rem; }
+        p { margin-bottom: 10px; color: var(--text); font-size: 0.98rem; opacity: 0.9; }
+        
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: background 0.2s; }
+        .btn:hover { background: var(--primary-dark); }
+
+        .study-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media(max-width: 768px) { .study-layout { grid-template-columns: 1fr; } }
+
+        .pomodoro-box, .pet-box { text-align: center; background: var(--bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); }
+        .pomodoro-timer { font-size: 2.8rem; font-weight: bold; color: var(--accent); margin: 15px 0; }
+        
+        .focus-split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; align-items: center; }
+        @media(max-width: 768px) { .focus-split { grid-template-columns: 1fr; } }
+
+        .pet-avatar-container {
+            background: rgba(2, 132, 199, 0.08);
+            border: 2px dashed var(--accent);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .pet-avatar { 
+            margin: 5px auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            user-select: none;
+            transition: transform 0.2s;
+            animation: breathe 3s ease-in-out infinite;
+        }
+        .pet-stage-baby { font-size: 5rem; min-height: 100px; }
+        .pet-stage-teen { font-size: 7rem; min-height: 130px; }
+        .pet-stage-adult { font-size: 9rem; min-height: 160px; }
+        
+        .pet-avatar:active { transform: scale(0.85); }
+
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-4px) scale(1.02); }
+        }
+
+        .pet-speech-bubble {
+            background: var(--card-bg);
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 14px;
+            border-radius: 15px;
+            font-size: 0.88rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 5px;
+            min-height: 35px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .pet-stats { text-align: left; margin: 15px 0; font-size: 0.9rem; }
+        .stat-bar-container { background: var(--border); border-radius: 6px; height: 10px; width: 100%; margin-bottom: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .stat-bar { height: 100%; transition: width 0.3s; }
+
+        .shop-card, .trophy-card { background: var(--bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .card-unlocked { background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); padding: 10px; border-radius: 8px; margin-top: 10px; font-style: italic; }
+        
+        .pet-shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
+        .pet-shop-item { background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .pet-shop-item:hover { border-color: var(--accent); }
+
+        .surprise-box { text-align: center; background: var(--bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .surprise-icon { font-size: 4rem; cursor: pointer; transition: transform 0.2s; display: inline-block; }
+        .surprise-icon:hover { transform: scale(1.1); }
+
+        .theme-selector { display: flex; justify-content: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .theme-btn { border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+
+        .quick-notes { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 15px; resize: vertical; min-height: 250px; font-size: 1rem; }
+        .desk-accessories { font-size: 1.8rem; margin-top: 10px; display: flex; justify-content: center; gap: 10px; min-height: 40px; }
+
+        /* POST-ITS ADHESIVOS */
+        .postits-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .postit-card {
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .postit-textarea {
+            background: transparent;
+            border: none;
+            width: 100%;
+            resize: vertical;
+            font-size: 0.85rem;
+            outline: none;
+            font-family: inherit;
+            min-height: 60px;
+        }
+    </style>
+</head>
+<body id="app-body">
+
+    <div id="coin-toast">💡 ¡Todo es 100% gratuito! Sin dinero real. Estudia con el temporizador para ganar monedas.</div>
+
+    <header>
+        <div class="streak-badge">⚡ Racha: <span id="user-streak">1</span> días</div>
+        <div class="coins-badge" onclick="toggleCoinMessage()" title="Haz clic para ver información de monedas">🪙 <span id="user-coins">15</span> Monedas</div>
+        <h1>Time Pro</h1>
+        <p id="rotating-quote" style="cursor: pointer;" title="Haz clic para cambiar de frase" onclick="changeQuote()">“La disciplina tarde o temprano supera al talento.” (Haz clic)</p>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('pomodoro')">🍅 Enfoque</button>
+        <button class="tab-btn" onclick="switchTab('pet')">🐾 Mascota</button>
+        <button class="tab-btn" onclick="switchTab('shop')">🎁 Tienda</button>
+        <button class="tab-btn" onclick="switchTab('progress')">📊 Progreso & Logros</button>
+        <button class="tab-btn" onclick="switchTab('marathon')">⏱️ Cronómetro Libre</button>
+        <button class="tab-btn" onclick="switchTab('notes')">📝 Apuntes & Tema</button>
+        <button class="tab-btn" onclick="switchTab('guide')">🎨 Indicaciones y Colores</button>
+    </div>
+
+    <!-- 1. ENFOQUE (POMODORO) -->
+    <div id="pomodoro" class="section active">
+        <h2>Espacio de Concentración</h2>
+        <div class="pomodoro-box" style="max-width: 700px; margin: 0 auto;">
+            <div class="focus-split">
+                <div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">Duración del Bloque:</label>
+                        <select id="select-duration" onchange="changePomodoroDuration()" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); padding: 4px; border-radius: 4px; font-size: 0.85rem;">
+                            <option value="25">25 Minutos (Estándar)</option>
+                            <option value="30">30 Minutos</option>
+                            <option value="45">45 Minutos</option>
+                            <option value="60">1 Hora (Intenso)</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">Descanso posterior:</label>
+                        <select id="select-break" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); padding: 4px; border-radius: 4px; font-size: 0.85rem;">
+                            <option value="5">Descanso Corto (5 min)</option>
+                            <option value="10">Descanso Medio (10 min)</option>
+                            <option value="15">Descanso Largo (15 min)</option>
+                        </select>
+                    </div>
+
+                    <div class="pomodoro-timer" id="pomodoro-display">25:00</div>
+                    <p id="timer-status-label" style="font-size: 0.85rem; color: var(--success); font-weight: bold; margin-bottom: 5px;"></p>
+                    
+                    <div class="desk-accessories" id="active-desk-accessories"></div>
+                    
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+                        <span>Tus elegidos para el escritorio (Elige hasta 5):</span>
+                        <div id="desk-selector-panel" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 5px;"></div>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <button class="btn" id="pomodoro-btn" onclick="togglePomodoro()">▶️ Iniciar</button>
+                        <button class="btn" style="background: #374151; margin-left: 5px;" onclick="resetPomodoro()">🔄</button>
+                    </div>
+                </div>
+                
+                <div class="pet-avatar-container">
+                    <div id="speech-container"><div class="pet-speech-bubble" id="pet-bubble-text">¡Hola, futuro colega! 🩺</div></div>
+                    <div id="pomodoro-pet-buddy" class="pet-avatar pet-stage-baby" onclick="interactWithPet()">🥚</div>
+                    <div style="margin-top: 5px;">
+                        <select id="select-pomo-pet" onchange="changePomoPet()" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); padding: 4px; border-radius: 4px; font-size: 0.8rem; width: 100%;"></select>
+                    </div>
+                    <div id="pomo-age-badge" style="font-size: 0.75rem; color: var(--gold); margin-top: 4px; font-weight: bold;">Edad: 0 años (Bebé 🐣)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MASCOTA VIRTUAL Y TIENDA DE COMIDA EN CUADRÍCULA -->
+    <div id="pet" class="section">
+        <h2>Tu Compañero de Estudio</h2>
+        <div class="study-layout">
+            <div class="pet-box">
+                <h3 id="pet-name">Sin Mascota Seleccionada</h3>
+                <div class="pet-avatar pet-stage-baby" id="pet-emoji">🥚</div>
+                <p id="pet-status-text" style="font-size: 0.9rem; color: var(--accent); margin-bottom: 10px;">Visita la tienda para adoptar</p>
+                
+                <div class="pet-stats">
+                    <p>🍖 Hambre: <span id="stat-hunger">100</span>%</p>
+                    <div class="stat-bar-container"><div class="stat-bar" id="bar-hunger" style="width:100%; background: var(--success);"></div></div>
+                    
+                    <p>😊 Felicidad: <span id="stat-happy">100</span>%</p>
+                    <div class="stat-bar-container"><div class="stat-bar" id="bar-happy" style="width:100%; background: var(--accent);"></div></div>
+                    
+                    <p>💤 Energía: <span id="stat-sleep">100</span>%</p>
+                    <div class="stat-bar-container"><div class="stat-bar" id="bar-sleep" style="width:100%; background: var(--gold);"></div></div>
+                    
+                    <p>✨ Ánimo: <span id="stat-mood">100</span>%</p>
+                    <div class="stat-bar-container"><div class="stat-bar" id="bar-mood" style="width:100%; background: #ec4899;"></div></div>
+                </div>
+            </div>
+
+            <div class="pet-box" style="text-align: left;">
+                <h3>🍎 Menú de Comida y Alimentos</h3>
+                <p style="font-size: 0.85rem; margin-bottom: 10px;">Compra y alimenta a tu mascota. Cada alimento recupera hambre y felicidad.</p>
+                <div class="pet-shop-grid" id="food-shop-grid" style="max-height: 380px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. TIENDA GENERAL (MASCOTAS + ACCESORIOS) -->
+    <div id="shop" class="section">
+        <h2>Sorpresa Diaria y Tienda General (100% Gratis)</h2>
+        <div class="surprise-box">
+            <div class="surprise-icon" id="surprise-element" onclick="openDailySurprise()">🥚</div>
+            <p id="surprise-status" style="margin-top: 15px; font-weight: bold; color: var(--accent);">¡Haz clic en el huevo para eclosionar tu sorpresa diaria!</p>
+        </div>
+
+        <h3>🐾 1. Mascotas Estándar (20 Monedas)</h3>
+        <div class="pet-shop-grid" id="pet-shop-grid-standard"></div>
+
+        <h3 style="margin-top: 25px;">⭐ 2. Mascotas Legendarias (35 Monedas - ¡Dan +1 moneda extra!)</h3>
+        <div class="pet-shop-grid" id="pet-shop-grid-special"></div>
+
+        <h3 style="margin-top: 25px;">🛋️ 3. Tienda de Accesorios</h3>
+        <div class="pet-shop-grid" id="accessories-shop-grid"></div>
+
+        <h3 style="margin-top: 25px;">✏️ 4. Registro Civil (Renombrar Mascota)</h3>
+        <div class="shop-card">
+            <div>
+                <strong>Cambiar Nombre de tu Mascota</strong>
+                <p style="font-size: 0.85rem;" id="rename-cost-text">Costo actual: 10 🪙</p>
+            </div>
+            <button class="btn" style="margin-top:0; padding:6px 12px;" onclick="renamePet()">Renombrar</button>
+        </div>
+
+        <h3 style="margin-top: 25px;">📚 5. Fichas de Motivación (15 Monedas c/u)</h3>
+        <div id="shop-container"></div>
+    </div>
+
+    <!-- 4. PROGRESO, MISIONES Y LOGROS -->
+    <div id="progress" class="section">
+        <h2>Progreso, Misiones y Logros</h2>
+        
+        <div class="pomodoro-box" style="margin-bottom: 20px; text-align: left;">
+            <h3 id="rank-title" style="color: var(--gold);">Rango: Estudiante 📚</h3>
+            <p id="total-minutes-text" style="font-size: 0.9rem; margin-bottom: 10px;">Minutos Totales de Estudio: 0 min</p>
+            <div class="stat-bar-container" style="height: 14px;"><div class="stat-bar" id="bar-xp" style="width: 0%; background: var(--gold);"></div></div>
+        </div>
+
+        <div class="study-layout" style="margin-bottom: 20px;">
+            <div class="pomodoro-box" style="text-align: left;">
+                <h3>📈 Resumen General</h3>
+                <p>⏱️ Minutos Totales: <span id="stat-total-min" style="font-weight: bold; color: var(--gold);">0 min</span></p>
+                <p>🍅 Bloques Pomodoro: <span id="stat-total-blocks" style="font-weight: bold; color: var(--success);">0</span></p>
+                <p>⚡ Racha Actual: <span id="stat-current-streak" style="font-weight: bold; color: var(--accent);">1 días</span></p>
+            </div>
+            <div class="pomodoro-box" style="text-align: left;">
+                <h3>🎯 Estado del Estudiante</h3>
+                <p>🐾 Mascota Activa: <span id="stat-active-pet" style="font-weight: bold;">Ninguna</span></p>
+                <p>🏆 Trofeos Obtenidos: <span id="stat-trophies-count" style="font-weight: bold;">0 / 6</span></p>
+                <p>🎁 Fichas Desbloqueadas: <span id="stat-cards-count" style="font-weight: bold;">0 / 4</span></p>
+            </div>
+        </div>
+
+        <h3>📜 Misiones Diarias</h3>
+        <div id="quests-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; margin-bottom: 25px;">
+            <div class="shop-card">
+                <div>
+                    <strong>Misión 1: Primer Bloque</strong>
+                    <p style="font-size: 0.85rem;">Completa 1 bloque de estudio hoy (+10 Monedas)</p>
+                </div>
+                <button class="btn" id="quest-btn-1" onclick="claimQuest(1, 10)">Reclamar</button>
+            </div>
+            <div class="shop-card">
+                <div>
+                    <strong>Misión 2: Cuidador Responsable</strong>
+                    <p style="font-size: 0.85rem;">Alimenta a tu mascota (+5 Monedas)</p>
+                </div>
+                <button class="btn" id="quest-btn-2" onclick="claimQuest(2, 5)">Reclamar</button>
+            </div>
+        </div>
+
+        <h3>🏆 Trofeos y Logros (Corto, Mediano y Largo Plazo con Recompensas)</h3>
+        <div id="trophies-container" style="margin-top: 10px;"></div>
+    </div>
+
+    <!-- 5. CRONÓMETRO LIBRE (MARATÓN) -->
+    <div id="marathon" class="section">
+        <h2>Modo Cronómetro Libre (Maratón)</h2>
+        <div class="pomodoro-box" style="max-width: 700px; margin: 0 auto;">
+            <div class="focus-split">
+                <div>
+                    <p style="font-weight: bold; color: var(--accent);">Cuenta hacia adelante</p>
+                    <div class="pomodoro-timer" id="stopwatch-display">00:00:00</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 10px 0;">Monedas proporcionales al tiempo exacto.</p>
+                    <div style="margin-top: 15px;">
+                        <button class="btn" id="stopwatch-btn" onclick="toggleStopwatch()">▶️ Iniciar</button>
+                        <button class="btn" style="background: #374151; margin-left: 5px;" onclick="stopAndClaimStopwatch()">🏁 Cobrar</button>
+                    </div>
+                </div>
+
+                <div class="pet-avatar-container">
+                    <div id="stopwatch-pet-buddy" class="pet-avatar pet-stage-baby">💤</div>
+                    <div style="margin-top: 5px;">
+                        <select id="select-stop-pet" onchange="changeStopPet()" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); padding: 4px; border-radius: 4px; font-size: 0.8rem; width: 100%;"></select>
+                    </div>
+                    <div id="stop-age-badge" style="font-size: 0.75rem; color: var(--gold); margin-top: 4px; font-weight: bold;">Edad: 0 años (Bebé 🐣)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. APUNTES Y TEMA (SOLO BLOC DE NOTAS Y POST-ITS) -->
+    <div id="notes" class="section">
+        <h2>Bloc de Notas Rápido</h2>
+        <p style="margin-bottom: 15px; font-size: 0.9rem;">Apunta aquí tus pendientes al vuelo. Se guarda automáticamente.</p>
+        <textarea id="quick-notes" class="quick-notes" placeholder="Escribe tus apuntes aquí..." oninput="saveNotes()"></textarea>
+
+        <h3 style="margin-top: 25px;">📌 Notas Adhesivas (Post-its)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Crea notas coloridas flotantes.</p>
+        <button class="btn" style="padding: 6px 12px; font-size: 0.85rem;" onclick="addPostIt()">➕ Nueva Nota Adhesiva</button>
+        <div class="postits-container" id="postits-container"></div>
+    </div>
+
+    <!-- 7. INDICACIONES Y COLORES (NUEVA PESTAÑA PRINCIPAL) -->
+    <div id="guide" class="section">
+        <h2>Indicaciones y Colores</h2>
+        
+        <div style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6;">
+            <p style="color: var(--accent); font-weight: bold; margin-bottom: 6px;">✨ ¡Todo es 100% gratuito y sin dinero real!</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Gana monedas completando tus sesiones en el temporizador, alimenta a tus mascotas y desbloquea logros sin cobros reales de ningún tipo.</p>
+        </div>
+
+        <h3 style="margin-top: 20px; font-size: 1.1rem;">🎨 Colores de la Página</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Selecciona tu gama estética favorita:</p>
+        <div class="theme-selector" style="justify-content: flex-start; margin-bottom: 25px;">
+            <button class="theme-btn" style="background: #111827; color: #f3f4f6;" onclick="setTheme('default')">Predeterminado</button>
+            <button class="theme-btn" style="background: #000000; color: #ffffff; border: 1px solid #333;" onclick="setTheme('black')">Negro</button>
+            <button class="theme-btn" style="background: #fef08a; color: #713f12;" onclick="setTheme('yellow')">Amarillo</button>
+            <button class="theme-btn" style="background: #38bdf8; color: #ffffff;" onclick="setTheme('blue')">Azul</button>
+            <button class="theme-btn" style="background: #a78bfa; color: #ffffff;" onclick="setTheme('purple')">Morado</button>
+            <button class="theme-btn" style="background: #fda4af; color: #881337;" onclick="setTheme('pink')">Rosado</button>
+            <button class="theme-btn" style="background: #f87171; color: #ffffff;" onclick="setTheme('red')">Rojo</button>
+            <button class="theme-btn" style="background: #34d399; color: #065f46;" onclick="setTheme('green')">Verde</button>
+            <button class="theme-btn" style="background: #64748b; color: #ffffff;" onclick="setTheme('gray')">Gris</button>
+            <button class="theme-btn" style="background: #ffffff; color: #111827; border: 1px solid #ccc;" onclick="setTheme('white')">Blanco</button>
+            <button class="theme-btn" style="background: #f59e0b; color: #ffffff;" onclick="setTheme('gold')">Dorado Pro</button>
+        </div>
+
+        <h3 style="margin-top: 25px; font-size: 1.1rem;">🔑 Código de Recuperación</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Guarda el estado actual de tus monedas, racha, minutos y mascotas para no perder tu progreso.</p>
+        <textarea id="account-code-box" class="quick-notes" style="min-height: 120px; font-size: 0.75rem;" readonly></textarea>
+        <button class="btn" style="padding: 8px 16px; font-size: 0.85rem; width: 100%; margin-top: 10px;" onclick="copyAccountCode()">📋 Copiar Código de Recuperación</button>
+    </div>
+
+    <script>
+        let userCoins = parseInt(localStorage.getItem('timepro_coins'));
+        if (isNaN(userCoins)) userCoins = 15;
+        let userStreak = parseInt(localStorage.getItem('timepro_streak')) || 1;
+
+        let toastTimer = null;
+        function toggleCoinMessage() {
+            let toast = document.getElementById('coin-toast');
+            toast.style.display = 'block';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 5000);
+        }
+
+        function updateCoinsDisplay() {
+            document.getElementById('user-coins').innerText = userCoins;
+            document.getElementById('user-streak').innerText = userStreak;
+            localStorage.setItem('timepro_coins', userCoins);
+            localStorage.setItem('timepro_streak', userStreak);
+            checkTrophies();
+            updateStatsDisplay();
+            updateAccountCode();
+        }
+
+        function updateAccountCode() {
+            let totalMins = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+            let data = { 
+                coins: userCoins, 
+                streak: userStreak, 
+                minutes: totalMins, 
+                theme: localStorage.getItem('timepro_theme') || 'default',
+                pets: ownedPets,
+                accessories: ownedAccessories 
+            };
+            let codeBox = document.getElementById('account-code-box');
+            if(codeBox) {
+                codeBox.value = btoa(JSON.stringify(data));
+            }
+        }
+
+        function copyAccountCode() {
+            let box = document.getElementById('account-code-box');
+            box.select();
+            document.execCommand('copy');
+            alert("📋 ¡Código de recuperación copiado con éxito!");
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        document.getElementById('quick-notes').value = localStorage.getItem('timepro_notes') || '';
+        function saveNotes() {
+            localStorage.setItem('timepro_notes', document.getElementById('quick-notes').value);
+        }
+
+        function setTheme(theme) {
+            let bg, cardBg, text, border, accent, success, gold;
+            if (theme === 'default') {
+                bg = '#090d16'; cardBg = '#111827'; text = '#f3f4f6'; border = '#1f2937'; accent = '#38bdf8'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'black') {
+                bg = '#000000'; cardBg = '#121212'; text = '#e5e7eb'; border = '#262626'; accent = '#60a5fa'; success = '#34d399'; gold = '#fbbf24';
+            } else if (theme === 'yellow') {
+                bg = '#fefce8'; cardBg = '#fef9c3'; text = '#713f12'; border = '#fde047'; accent = '#ca8a04'; success = '#16a34a'; gold = '#d97706';
+            } else if (theme === 'blue') {
+                bg = '#f0f9ff'; cardBg = '#ffffff'; text = '#0369a1'; border = '#bae6fd'; accent = '#0284c7'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'purple') {
+                bg = '#f5f3ff'; cardBg = '#ffffff'; text = '#5b21b6'; border = '#ddd6fe'; accent = '#7c3aed'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'pink') {
+                bg = '#fff1f2'; cardBg = '#ffffff'; text = '#881337'; border = '#fecdd3'; accent = '#e11d48'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'red') {
+                bg = '#fef2f2'; cardBg = '#ffffff'; text = '#991b1b'; border = '#fecaca'; accent = '#dc2626'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'green') {
+                bg = '#f0fdf4'; cardBg = '#ffffff'; text = '#065f46'; border = '#bbf7d0'; accent = '#059669'; success = '#10b981'; gold = '#d97706';
+            } else if (theme === 'gray') {
+                bg = '#f8fafc'; cardBg = '#ffffff'; text = '#334155'; border = '#cbd5e1'; accent = '#475569'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'white') {
+                bg = '#ffffff'; cardBg = '#f8fafc'; text = '#1e293b'; border = '#e2e8f0'; accent = '#0ea5e9'; success = '#10b981'; gold = '#f59e0b';
+            } else if (theme === 'gold') {
+                bg = '#fffbeb'; cardBg = '#ffffff'; text = '#78350f'; border = '#fde68a'; accent = '#d97706'; success = '#10b981'; gold = '#b45309';
+            }
+            
+            document.documentElement.style.setProperty('--bg', bg);
+            document.documentElement.style.setProperty('--card-bg', cardBg);
+            document.documentElement.style.setProperty('--text', text);
+            document.documentElement.style.setProperty('--border', border);
+            document.documentElement.style.setProperty('--accent', accent);
+            document.documentElement.style.setProperty('--success', success);
+            document.documentElement.style.setProperty('--gold', gold);
+
+            document.body.style.backgroundColor = bg;
+            document.body.style.color = text;
+            localStorage.setItem('timepro_theme', theme);
+            updateAccountCode();
+        }
+
+        const quotes = [
+            "“La disciplina tarde o temprano supera al talento.”",
+            "“Cada hora de enfoque hoy es un paso gigante hacia tus metas.”",
+            "“Paso a paso se construyen los profesionales más brillantes.”",
+            "“La constancia es el ingrediente secreto del éxito.”",
+            "“Ven, estudiemos un ratito juntos.”",
+            "“Tus sueños exigen tu mejor versión todos los días.”",
+            "“El esfuerzo de hoy es la recompensa y el orgullo de mañana.”"
+        ];
+        function changeQuote() {
+            let randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('rotating-quote').innerText = randomQuote + " (Haz clic para cambiar)";
+        }
+
+        let petAges = JSON.parse(localStorage.getItem('timepro_pet_ages')) || {}; 
+        let globalMinutesBackup = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+        if (globalMinutesBackup > 0 && Object.keys(petAges).length === 0) {
+            petAges['rex'] = globalMinutesBackup;
+            localStorage.setItem('timepro_pet_ages', JSON.stringify(petAges));
+        }
+
+        function getActivePetMinutes(petId) {
+            if (!petId) return 0;
+            return petAges[petId] || 0;
+        }
+
+        function addMinutesToActivePet(mins) {
+            if (!currentPomoPet) return;
+            let id = currentPomoPet.id;
+            petAges[id] = (petAges[id] || 0) + mins;
+            localStorage.setItem('timepro_pet_ages', JSON.stringify(petAges));
+        }
+
+        function getPetAgeInfo(minutes) {
+            let age = Math.floor(minutes / 25);
+            let stageClass = "pet-stage-baby";
+            let stageName = "Bebé 🐣";
+            if (age >= 25) {
+                stageClass = "pet-stage-adult";
+                stageName = "Adulto 🌟 (Imponente)";
+            } else if (age >= 15) {
+                stageClass = "pet-stage-teen";
+                stageName = "Adolescente ⚡";
+            }
+            return { age: age, stage: stageName, stageClass: stageClass };
+        }
+
+        const petPhrases = [
+            "¡La disciplina tarde o temprano supera al talento! 🌟",
+            "¡Mantén la mirada fija en tu meta, vas por excelente camino!",
+            "Un pequeño avance cada día suma grandes resultados 🚀.",
+            "¡Respira hondo, estira un poco y sigamos brillando en el estudio!",
+            "El esfuerzo de hoy es el éxito de mañana. ¡Dale con todo! 💪",
+            "¡Impresionante enfoque! Estoy orgulloso de acompañarte.",
+            "No pares cuando estés cansado, para cuando hayas terminado 🎯.",
+            "¡Cada minuto concentrado te acerca más a tu gran sueño profesional!",
+            "¡Qué gran ritmo llevas! Eres una máquina de productividad 🧠.",
+            "Recuerda que aquí todo es gratuito y ganado con tu propio esfuerzo.",
+            "¡Cerebro encendido y distracciones apagadas! Así se hace ✨.",
+            "Tómate un respiro si lo necesitas, pero nunca te rindas ☕.",
+            "¡Tus apuntes y esquemas están quedando increíbles hoy!",
+            "¡Esa racha de estudio se ve fantástica! Sigamos sumando días ⚡.",
+            "El conocimiento que adquieres hoy nadie te lo podrá quitar jamás 📚.",
+            "¡Qué buena sesión! Las monedas de oro te están esperando 🪙.",
+            "¡Paso a paso se llega a la cima de la montaña!",
+            "Concéntrate en el presente y domina esa materia difícil 🩺.",
+            "¡Estoy rugiendo de felicidad al verte estudiar con tanta energía!",
+            "¡A por todas! ¡Tú puedes con esto y mucho más! 🎉",
+            "No olvides tomar agüita 💧 para mantenerte hidratado.",
+            "Me pone muy feliz estar aquí contigo estudiando.",
+            "Ya quiero ser grande y cumplir más años a tu lado 🎂."
+        ];
+
+        function interactWithPet() {
+            if (!currentPomoPet) {
+                showPetSpeech("¡Adóptame en la tienda primero! 🥚");
+                return;
+            }
+            
+            let msgs = [];
+            if (petStats.hunger < 50) {
+                msgs.push("¡Tengo mucha hambre y pancita vacía! 🍎 Por favor cómprame algo de comer.");
+            }
+            if (petStats.happy < 50) {
+                msgs.push("Me siento un poco triste o aburrido... ¿me das un gustito? 🧸");
+            }
+            if (petStats.sleep < 50) {
+                msgs.push("Bostezo... tengo baja energía 💤. Acuérdate de usar los descansos para recargar pilas.");
+            }
+            if (petStats.mood < 50) {
+                msgs.push("Mi ánimo está bajo... ¡vamos a completar un bloque para alegrarnos! ✨");
+            }
+
+            if (msgs.length === 0) {
+                msgs = petPhrases;
+            }
+            
+            let randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+            showPetSpeech(randomMsg);
+        }
+
+        function showPetSpeech(msg) {
+            const container = document.getElementById('speech-container');
+            container.innerHTML = `<div class="pet-speech-bubble">${msg}</div>`;
+        }
+
+        let selectedDurationMinutes = 25;
+        let pomodoroTime = 25 * 60;
+        let pomodoroInterval = null;
+        let isPomodoroRunning = false;
+        let isBreakMode = false;
+
+        function changePomodoroDuration() {
+            if (isPomodoroRunning) {
+                alert("Pausa o reinicia el temporizador antes de cambiar el tiempo.");
+                return;
+            }
+            let select = document.getElementById('select-duration');
+            selectedDurationMinutes = parseInt(select.value);
+            pomodoroTime = selectedDurationMinutes * 60;
+            isBreakMode = false;
+            updatePomodoroDisplay();
+            document.getElementById('timer-status-label').innerText = "";
+        }
+
+        function togglePomodoro() {
+            const btn = document.getElementById('pomodoro-btn');
+            if (!isPomodoroRunning) {
+                isPomodoroRunning = true;
+                btn.innerText = "⏸️ Pausar";
+                if (!isBreakMode) {
+                    showPetSpeech("¡Concentración máxima activada! 🧠");
+                } else {
+                    showPetSpeech("¡Disfrutando tu descanso! ☕");
+                }
+
+                pomodoroInterval = setInterval(() => {
+                    if (pomodoroTime > 0) {
+                        pomodoroTime--;
+                        updatePomodoroDisplay();
+                    } else {
+                        clearInterval(pomodoroInterval);
+                        isPomodoroRunning = false;
+                        playAlertStatus();
+
+                        if (!isBreakMode) {
+                            addMinutesToActivePet(selectedDurationMinutes);
+                            let totalStudyMinutes = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+                            totalStudyMinutes += selectedDurationMinutes;
+                            localStorage.setItem('timepro_minutes', totalStudyMinutes);
+                            
+                            petStats.hunger = Math.max(0, petStats.hunger - 15);
+                            petStats.happy = Math.max(0, petStats.happy - 10);
+                            petStats.sleep = Math.max(0, petStats.sleep - 12);
+                            petStats.mood = Math.min(100, petStats.mood + 10);
+                            
+                            let reward = Math.round(selectedDurationMinutes * 0.4);
+                            if (currentPomoPet && currentPomoPet.special) reward += 2;
+                            if (petStats.hunger < 50 || petStats.sleep < 50) {
+                                reward = Math.max(1, Math.floor(reward * 0.8));
+                            }
+
+                            userCoins += reward;
+                            updateCoinsDisplay();
+                            updateRankDisplay();
+                            updatePetDisplay();
+
+                            let breakMins = parseInt(document.getElementById('select-break').value);
+                            pomodoroTime = breakMins * 60;
+                            isBreakMode = true;
+                            document.getElementById('timer-status-label').innerText = "☕ ¡Modo Descanso en curso!";
+                            showPetSpeech("¡Bloque superado! Comienza el descanso. 🏖️");
+                            alert(`🎉 ¡Bloque completado! Has ganado ${reward} Monedas.\n☕ ¡Comienza tu descanso de ${breakMins} minutos!`);
+                            
+                            btn.innerText = "▶️ Iniciar Descanso";
+                        } else {
+                            isBreakMode = false;
+                            pomodoroTime = selectedDurationMinutes * 60;
+                            petStats.sleep = Math.min(100, petStats.sleep + 25);
+                            updatePetDisplay();
+                            document.getElementById('timer-status-label').innerText = "🚀 ¡Listo para trabajar de nuevo!";
+                            showPetSpeech("¡Descanso terminado! ¡A darle con todo! 🔥");
+                            alert("🔔 ¡El descanso ha terminado! Ya estás listo para empezar el siguiente bloque.");
+                            
+                            btn.innerText = "▶️ Iniciar";
+                            updatePomodoroDisplay();
+                        }
+                    }
+                }, 1000);
+            } else {
+                isPomodoroRunning = false;
+                clearInterval(pomodoroInterval);
+                btn.innerText = "▶️ Reanudar";
+                showPetSpeech("Zzz... en pausa. ☕");
+            }
+        }
+
+        function playAlertStatus() {
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200, 100, 300]);
+            }
+            try {
+                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = ctx.createOscillator();
+                let gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+            } catch(e) {}
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoroInterval);
+            isPomodoroRunning = false;
+            isBreakMode = false;
+            pomodoroTime = selectedDurationMinutes * 60;
+            updatePomodoroDisplay();
+            document.getElementById('timer-status-label').innerText = "";
+            document.getElementById('pomodoro-btn').innerText = "▶️ Iniciar";
+        }
+
+        function updatePomodoroDisplay() {
+            let minutes = Math.floor(pomodoroTime / 60);
+            let seconds = pomodoroTime % 60;
+            document.getElementById('pomodoro-display').innerText = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // Cronómetro Libre
+        let stopwatchSeconds = 0;
+        let stopwatchInterval = null;
+        let isStopwatchRunning = false;
+
+        function toggleStopwatch() {
+            const btn = document.getElementById('stopwatch-btn');
+            if (!isStopwatchRunning) {
+                isStopwatchRunning = true;
+                btn.innerText = "⏸️ Pausar";
+                stopwatchInterval = setInterval(() => {
+                    stopwatchSeconds++;
+                    let hrs = Math.floor(stopwatchSeconds / 3600);
+                    let mins = Math.floor((stopwatchSeconds % 3600) / 60);
+                    let secs = stopwatchSeconds % 60;
+                    document.getElementById('stopwatch-display').innerText = 
+                        `${hrs < 10 ? '0' : ''}${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    updateStopBuddyAnimation(true);
+                }, 1000);
+            } else {
+                isStopwatchRunning = false;
+                clearInterval(stopwatchInterval);
+                btn.innerText = "▶️ Reanudar";
+                updateStopBuddyAnimation(false);
+            }
+        }
+
+        function stopAndClaimStopwatch() {
+            clearInterval(stopwatchInterval);
+            isStopwatchRunning = false;
+            document.getElementById('stopwatch-btn').innerText = "▶️ Iniciar";
+            updateStopBuddyAnimation(false);
+
+            if (stopwatchSeconds < 60) {
+                alert("⏱️ Estudia al menos 1 minuto para cobrar recompensa.");
+                stopwatchSeconds = 0;
+                document.getElementById('stopwatch-display').innerText = "00:00:00";
+                return;
+            }
+
+            let minutesStudied = Math.floor(stopwatchSeconds / 60);
+            if (currentStopPet) {
+                petAges[currentStopPet.id] = (petAges[currentStopPet.id] || 0) + minutesStudied;
+                localStorage.setItem('timepro_pet_ages', JSON.stringify(petAges));
+            }
+            let totalStudyMinutes = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+            totalStudyMinutes += minutesStudied;
+            localStorage.setItem('timepro_minutes', totalStudyMinutes);
+
+            let earnedCoins = Math.round(minutesStudied * 0.4);
+            if (earnedCoins < 1) earnedCoins = 1;
+            if (currentStopPet && currentStopPet.special) earnedCoins += Math.floor(minutesStudied / 25);
+
+            userCoins += earnedCoins;
+            updateCoinsDisplay();
+            updateRankDisplay();
+            updatePetDisplay();
+
+            playAlertStatus();
+            alert(`🏁 ¡Maratón terminada!\nTiempo: ${minutesStudied} min\nRecompensa: ${earnedCoins} Monedas.`);
+            stopwatchSeconds = 0;
+            document.getElementById('stopwatch-display').innerText = "00:00:00";
+        }
+
+        function updateBuddyAnimation(studying) {
+            const buddy = document.getElementById('pomodoro-pet-buddy');
+            if (!currentPomoPet) { buddy.className = "pet-avatar pet-stage-baby"; buddy.innerText = "🥚"; return; }
+            let mins = getActivePetMinutes(currentPomoPet.id);
+            let ageInfo = getPetAgeInfo(mins);
+            buddy.className = `pet-avatar ${ageInfo.stageClass}`;
+            buddy.innerText = currentPomoPet.emoji;
+            document.getElementById('pomo-age-badge').innerText = `Edad: ${ageInfo.age} años (${ageInfo.stage})`;
+        }
+
+        function updateStopBuddyAnimation(studying) {
+            const buddy = document.getElementById('stopwatch-pet-buddy');
+            if (!currentStopPet) { buddy.className = "pet-avatar pet-stage-baby"; buddy.innerText = "🥚"; return; }
+            let mins = getActivePetMinutes(currentStopPet.id);
+            let ageInfo = getPetAgeInfo(mins);
+            buddy.className = `pet-avatar ${ageInfo.stageClass}`;
+            buddy.innerText = currentStopPet.emoji;
+            document.getElementById('stop-age-badge').innerText = `Edad: ${ageInfo.age} años (${ageInfo.stage})`;
+        }
+
+        function updateRankDisplay() {
+            let totalStudyMinutes = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+            document.getElementById('total-minutes-text').innerText = `Minutos Totales de Estudio: ${totalStudyMinutes} min`;
+            let rank = "Estudiante 📚";
+            let progress = (totalStudyMinutes % 150) / 150 * 100;
+            if (totalStudyMinutes >= 150) rank = "Estudiante Avanzado ⚡";
+            if (totalStudyMinutes >= 400) rank = "Experto en Enfoque 🌟";
+            if (totalStudyMinutes >= 800) rank = "Maestro del Tiempo 👑";
+            if (totalStudyMinutes >= 1500) rank = "Leyenda Legendaria 🏆";
+            
+            document.getElementById('rank-title').innerText = `Rango: ${rank}`;
+            document.getElementById('bar-xp').style.width = `${Math.min(100, progress)}%`;
+        }
+        updateRankDisplay();
+
+        const foodData = [
+            { id: 'apple', name: 'Manzana 🍎', hunger: 20, happy: 10, cost: 4, icon: '🍎' },
+            { id: 'strawberry', name: 'Fresa 🍓', hunger: 15, happy: 10, cost: 3, icon: '🍓' },
+            { id: 'grape', name: 'Uvas 🍇', hunger: 20, happy: 15, cost: 4, icon: '🍇' },
+            { id: 'mango', name: 'Mango 🥭', hunger: 25, happy: 15, cost: 5, icon: '🥭' },
+            { id: 'carrot', name: 'Zanahoria 🥕', hunger: 25, happy: 10, cost: 5, icon: '🥕' },
+            { id: 'meat', name: 'Carne 🥩', hunger: 60, happy: 25, cost: 12, icon: '🥩' },
+            { id: 'chicken', name: 'Pollo 🍗', hunger: 50, happy: 20, cost: 10, icon: '🍗' },
+            { id: 'burger', name: 'Hamburguesa 🍔', hunger: 55, happy: 30, cost: 11, icon: '🍔' },
+            { id: 'hotdog', name: 'Hot Dog 🌭', hunger: 40, happy: 20, cost: 8, icon: '🌭' },
+            { id: 'sandwich', name: 'Sándwich 🥪', hunger: 35, happy: 15, cost: 7, icon: '🥪' },
+            { id: 'pizza', name: 'Pizza 🍕', hunger: 50, happy: 35, cost: 10, icon: '🍕' },
+            { id: 'shrimp', name: 'Camarón 🍤', hunger: 30, happy: 20, cost: 7, icon: '🍤' },
+            { id: 'cupcake', name: 'Cupcake 🧁', hunger: 20, happy: 40, cost: 8, icon: '🧁' },
+            { id: 'donut', name: 'Donita 🍩', hunger: 20, happy: 40, cost: 8, icon: '🍩' },
+            { id: 'milk', name: 'Leche 🥛', hunger: 30, happy: 20, cost: 6, icon: '🥛' },
+            { id: 'honey', name: 'Miel 🍯', hunger: 35, happy: 25, cost: 7, icon: '🍯' },
+            { id: 'cake', name: 'Pastel 🍰', hunger: 40, happy: 50, cost: 12, icon: '🍰' },
+            { id: 'icecream', name: 'Helado 🍦', hunger: 25, happy: 45, cost: 9, icon: '🍦' },
+            { id: 'chocolate', name: 'Chocolate 🍫', hunger: 20, happy: 40, cost: 8, icon: '🍫' },
+            { id: 'bone', name: 'Huesito 🦴', hunger: 30, happy: 30, cost: 6, icon: '🦴' },
+            { id: 'corn', name: 'Elote 🌽', hunger: 25, happy: 15, cost: 5, icon: '🌽' }
+        ];
+
+        function renderFoodShop() {
+            const grid = document.getElementById('food-shop-grid');
+            if(!grid) return;
+            grid.innerHTML = "";
+            foodData.forEach(f => {
+                grid.innerHTML += `
+                    <div class="pet-shop-item">
+                        <div style="font-size: 2rem;">${f.icon}</div>
+                        <div style="font-weight: bold; margin: 3px 0; font-size: 0.8rem;">${f.name}</div>
+                        <div style="font-size: 0.72rem; color: var(--gold);">Costo: ${f.cost} 🪙</div>
+                        <div style="font-size: 0.7rem; color: var(--success);">+${f.hunger} Hambre</div>
+                        <button class="btn" style="padding: 3px 6px; font-size: 0.7rem; margin-top:4px;" onclick="buyFood('${f.id}', ${f.hunger}, ${f.happy}, ${f.cost})">Comprar</button>
+                    </div>
+                `;
+            });
+        }
+
+        function buyFood(id, hGain, hHappy, cost) {
+            if (!currentPomoPet) { alert("⚠️ Primero selecciona una mascota en el Pomodoro para alimentarla."); return; }
+            if (userCoins >= cost) {
+                userCoins -= cost;
+                updateCoinsDisplay();
+                petStats.hunger = Math.min(100, petStats.hunger + hGain);
+                petStats.happy = Math.min(100, petStats.happy + hHappy);
+                updatePetDisplay();
+                localStorage.setItem('timepro_quest2_done', 'true');
+                showPetSpeech("¡Qué delicia! Muchas gracias 😋");
+                alert(`🍽️ ¡Le diste ${id} a tu mascota! Recuperó energía y felicidad.`);
+            } else { alert("❌ No tienes suficientes monedas."); }
+        }
+
+        const accessoriesData = [
+            { id: 'tree_f', name: 'Árbol 🎄', cost: 20, icon: '🎄' },
+            { id: 'clover', name: 'Trébol 🍀', cost: 15, icon: '🍀' },
+            { id: 'leaf', name: 'Hoja 🍃', cost: 15, icon: '🍃' },
+            { id: 'tree', name: 'Árbol Verde 🌳', cost: 20, icon: '🌳' },
+            { id: 'pine', name: 'Pino 🌲', cost: 20, icon: '🌲' },
+            { id: 'plant', name: 'Planta 🪴', cost: 20, icon: '🪴' },
+            { id: 'tulips', name: 'Tulipanes 🌷', cost: 20, icon: '🌷' },
+            { id: 'hibiscus', name: 'Hibiscos 🌺', cost: 20, icon: '🌺' },
+            { id: 'blossom', name: 'Flor de Cerezo 🌸', cost: 20, icon: '🌸' },
+            { id: 'hyacinth', name: 'Jacinto 🪻', cost: 20, icon: '🪻' },
+            { id: 'wheat', name: 'Trigo 🌾', cost: 15, icon: '🌾' },
+            { id: 'soccer', name: 'Balón Fútbol ⚽', cost: 20, icon: '⚽' },
+            { id: 'softball', name: 'Softball 🥎', cost: 20, icon: '🥎' },
+            { id: 'basketball', name: 'Baloncesto 🏀', cost: 20, icon: '🏀' },
+            { id: 'tennis', name: 'Tenis 🎾', cost: 20, icon: '🎾' },
+            { id: 'pool', name: 'Bola 8 🎱', cost: 20, icon: '🎱' },
+            { id: 'pingpong', name: 'Ping Pong 🏓', cost: 20, icon: '🏓' },
+            { id: 'bow', name: 'Arco y Flecha 🏹', cost: 25, icon: '🏹' },
+            { id: 'karate', name: 'Karate 🥋', cost: 25, icon: '🥋' },
+            { id: 'trophy', name: 'Trofeo 🏆', cost: 50, icon: '🏆' },
+            { id: 'chess', name: 'Ajedrez ♟️', cost: 20, icon: '♟️' },
+            { id: 'car', name: 'Auto 🚗', cost: 25, icon: '🚗' },
+            { id: 'suv', name: 'Camioneta 🚙', cost: 25, icon: '🚙' },
+            { id: 'copcar', name: 'Patrulla 🚓', cost: 30, icon: '🚓' },
+            { id: 'van', name: 'Minivan 🚐', cost: 25, icon: '🚐' },
+            { id: 'bus', name: 'Autobús 🚌', cost: 30, icon: '🚌' },
+            { id: 'camera', name: 'Cámara 📷', cost: 30, icon: '📷' },
+            { id: 'hourglass', name: 'Reloj Arena ⌛', cost: 20, icon: '⌛' },
+            { id: 'timer', name: 'Cronómetro ⏳', cost: 20, icon: '⏳' },
+            { id: 'books', name: 'Libros 📚', cost: 15, icon: '📚' },
+            { id: 'teddy', name: 'Peluche 🧸', cost: 20, icon: '🧸' },
+            { id: 'xray', name: 'Radiografía 🩻', cost: 30, icon: '🩻' },
+            { id: 'steth', name: 'Estetoscopio 🩺', cost: 30, icon: '🩺' },
+            { id: 'telescope', name: 'Telescopio 🔭', cost: 35, icon: '🔭' },
+            { id: 'micro', name: 'Microscopio 🔬', cost: 35, icon: '🔬' },
+            { id: 'dna', name: 'ADN 🧬', cost: 35, icon: '🧬' },
+            { id: 'therm', name: 'Termómetro 🌡️', cost: 25, icon: '🌡️' },
+            { id: 'heart_y', name: 'Corazón Amarillo 💛', cost: 15, icon: '💛' },
+            { id: 'heart_b', name: 'Corazón Azul 💙', cost: 15, icon: '💙' },
+            { id: 'heart_r', name: 'Corazón Rojo ❤️', cost: 15, icon: '❤️' },
+            { id: 'heart_pk', name: 'Corazón Rosado 🩷', cost: 15, icon: '🩷' },
+            { id: 'heart_lb', name: 'Corazón Celeste 🩵', cost: 15, icon: '🩵' },
+            { id: 'heart_fire', name: 'Corazón Ardiente ❤️‍🔥', cost: 20, icon: '❤️‍🔥' }
+        ];
+
+        let ownedAccessories = JSON.parse(localStorage.getItem('timepro_owned_accessories')) || [];
+        let activeAccessories = JSON.parse(localStorage.getItem('timepro_active_accessories')) || [];
+
+        function renderAccessoriesShop() {
+            const grid = document.getElementById('accessories-shop-grid');
+            if(!grid) return;
+            grid.innerHTML = "";
+
+            accessoriesData.forEach(acc => {
+                let ownedCount = ownedAccessories.filter(id => id === acc.id).length;
+                grid.innerHTML += `
+                    <div class="pet-shop-item">
+                        <div style="font-size: 2rem;">${acc.icon}</div>
+                        <div style="font-weight: bold; margin: 4px 0; font-size: 0.82rem;">${acc.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--gold);">${acc.cost} 🪙</div>
+                        <div style="font-size: 0.75rem; color: var(--success); margin: 2px 0;">Tienes: ${ownedCount}</div>
+                        <button class="btn" style="padding: 3px 6px; font-size: 0.7rem; margin-top:2px;" onclick="buyAccessory('${acc.id}', ${acc.cost})">Comprar</button>
+                    </div>
+                `;
+            });
+            renderDeskSelectorPanel();
+            renderDeskAccessories();
+        }
+
+        function buyAccessory(id, cost) {
+            if (userCoins >= cost) {
+                userCoins -= cost;
+                updateCoinsDisplay();
+                ownedAccessories.push(id);
+                localStorage.setItem('timepro_owned_accessories', JSON.stringify(ownedAccessories));
+                renderAccessoriesShop();
+                updateAccountCode();
+                alert("🛋️ ¡Accesorio comprado con éxito!");
+            } else { alert("❌ No tienes suficientes monedas. ¡Estudia con el temporizador para ganar monedas, aquí no usamos dinero real!"); }
+        }
+
+        function renderDeskSelectorPanel() {
+            const panel = document.getElementById('desk-selector-panel');
+            if(!panel) return;
+            panel.innerHTML = "";
+
+            if (ownedAccessories.length === 0) {
+                panel.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">Aún no compras accesorios en la tienda.</span>';
+                return;
+            }
+
+            for (let i = 0; i < 5; i++) {
+                let currentId = activeAccessories[i] || '';
+                let selectHtml = `<select onchange="updateActiveAccessory(${i}, this.value)" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border); padding: 3px; border-radius: 4px; font-size: 0.75rem;">`;
+                selectHtml += `<option value="">-- Vacío --</option>`;
+                
+                let uniqueOwned = [...new Set(ownedAccessories)];
+                uniqueOwned.forEach(accId => {
+                    let item = accessoriesData.find(a => a.id === accId);
+                    if(item) {
+                        let selected = currentId === accId ? 'selected' : '';
+                        selectHtml += `<option value="${accId}" ${selected}>${item.icon} ${item.name}</option>`;
+                    }
+                });
+                selectHtml += `</select>`;
+                panel.innerHTML += selectHtml;
+            }
+        }
+
+        function updateActiveAccessory(index, value) {
+            if (value === "") {
+                activeAccessories.splice(index, 1);
+            } else {
+                activeAccessories[index] = value;
+            }
+            activeAccessories = activeAccessories.filter(x => x !== "").slice(0, 5);
+            localStorage.setItem('timepro_active_accessories', JSON.stringify(activeAccessories));
+            renderDeskAccessories();
+            updateAccountCode();
+        }
+
+        function renderDeskAccessories() {
+            const desk = document.getElementById('active-desk-accessories');
+            if(!desk) return;
+            desk.innerHTML = "";
+            activeAccessories.forEach(id => {
+                let item = accessoriesData.find(a => a.id === id);
+                if(item) { desk.innerHTML += `<span>${item.icon}</span>`; }
+            });
+        }
+
+        const petsData = [
+            { id: 'rex', name: 'Rex', emoji: '🦖', cost: 20, special: false },
+            { id: 'patric', name: 'Patric', emoji: '🐥', cost: 20, special: false },
+            { id: 'mia', name: 'Mia', emoji: '🐱', cost: 20, special: false },
+            { id: 'milo', name: 'Milo', emoji: '🐈', cost: 20, special: false },
+            { id: 'bruno', name: 'Bruno', emoji: '🐶', cost: 20, special: false },
+            { id: 'copito', name: 'Copito', emoji: '🐰', cost: 20, special: false },
+            { id: 'spirit', name: 'Spirit', emoji: '🐴', cost: 20, special: false },
+            { id: 'momo', name: 'Momo', emoji: '🐵', cost: 20, special: false },
+            { id: 'tomi', name: 'Tomi', emoji: '🐯', cost: 20, special: false },
+            { id: 'leonidas', name: 'Leonidas', emoji: '🦁', cost: 20, special: false },
+            { id: 'koko', name: 'Koko', emoji: '🐨', cost: 20, special: false },
+            { id: 'nacho', name: 'Nacho', emoji: '🦝', cost: 20, special: false },
+            { id: 'avicena', name: 'Avicena', emoji: '🦉', cost: 20, special: false },
+            { id: 'mauro', name: 'Mauro', emoji: '🦕', cost: 20, special: false },
+            { id: 'fenix', name: 'Fénix', emoji: '🦭', cost: 20, special: false },
+            { id: 'florian', name: 'Florian', emoji: '🦩', cost: 20, special: false },
+            { id: 'nuri', name: 'Nuri', emoji: '🦦', cost: 20, special: false },
+            { id: 'arle', name: 'Arle', emoji: '🐿️', cost: 20, special: false },
+            { id: 'pepe', name: 'Pepe', emoji: '🦥', cost: 20, special: false },
+            { id: 'erik', name: 'Erik', emoji: '🦔', cost: 20, special: false },
+            { id: 'canelo', name: 'Canelo', emoji: '🦫', cost: 20, special: false },
+            { id: 'ciro', name: 'Ciro', emoji: '🐹', cost: 20, special: false },
+            { id: 'mimi', name: 'Mimi', emoji: '🐜', cost: 20, special: false },
+            { id: 'flash', name: 'Flash', emoji: '🐢', cost: 20, special: false },
+            { id: 'panda', name: 'Panda Espacial', emoji: '🐼🚀', cost: 35, special: true },
+            { id: 'fox', name: 'Zorro Místico', emoji: '🦊✨', cost: 35, special: true },
+            { id: 'dino', name: 'Dino Doctor', emoji: '🦕🩺', cost: 35, special: true }
+        ];
+
+        let ownedPets = JSON.parse(localStorage.getItem('timepro_owned_pets')) || [];
+        let currentPomoPet = JSON.parse(localStorage.getItem('timepro_pomo_pet')) || null;
+        let currentStopPet = JSON.parse(localStorage.getItem('timepro_stop_pet')) || null;
+        let petStats = JSON.parse(localStorage.getItem('timepro_pet_stats')) || { hunger: 100, happy: 100, sleep: 100, mood: 100 };
+        let renameCount = parseInt(localStorage.getItem('timepro_rename_count')) || 0;
+
+        if (!currentPomoPet && ownedPets.length > 0) {
+            let found = petsData.find(p => p.id === ownedPets[0]);
+            if (found) currentPomoPet = { ...found };
+        }
+
+        function getRenameCost() { return 10 + (renameCount * 10); }
+        function updateRenameCostText() {
+            let cost = getRenameCost();
+            const txt = document.getElementById('rename-cost-text');
+            if(txt) txt.innerText = `Costo actual: ${cost} 🪙`;
+        }
+
+        function renamePet() {
+            if (!currentPomoPet && !currentStopPet) {
+                alert("❌ Primero selecciona o adopta al menos una mascota.");
+                return;
+            }
+            let targetPet = currentPomoPet || currentStopPet;
+            let cost = getRenameCost();
+            if (userCoins >= cost) {
+                let newName = prompt(`Escribe el nuevo nombre para ${targetPet.name} (Costo: ${cost} 🪙):`, targetPet.name);
+                if (newName && newName.trim() !== "") {
+                    userCoins -= cost;
+                    renameCount++;
+                    localStorage.setItem('timepro_rename_count', renameCount);
+                    updateCoinsDisplay();
+                    targetPet.name = newName.trim();
+                    localStorage.setItem('timepro_pomo_pet', JSON.stringify(currentPomoPet));
+                    localStorage.setItem('timepro_stop_pet', JSON.stringify(currentStopPet));
+                    updatePetDisplay();
+                    renderPetSelectors();
+                    renderPetShop();
+                    updateRenameCostText();
+                    alert(`✏️ ¡Nombre cambiado a "${targetPet.name}"!`);
+                }
+            } else { alert(`❌ No tienes suficientes monedas. ¡Aquí no usamos dinero real, estudia para adquirir tus monedas! Necesitas ${cost} 🪙.`); }
+        }
+
+        function renderPetShop() {
+            const standardGrid = document.getElementById('pet-shop-grid-standard');
+            const specialGrid = document.getElementById('pet-shop-grid-special');
+            if(!standardGrid || !specialGrid) return;
+            standardGrid.innerHTML = "";
+            specialGrid.innerHTML = "";
+
+            petsData.forEach(pet => {
+                let isOwned = ownedPets.includes(pet.id);
+                let html = `
+                    <div class="pet-shop-item ${isOwned ? 'owned' : ''}">
+                        <div style="font-size: 2rem;">${pet.emoji}</div>
+                        <div style="font-weight: bold; margin: 5px 0;">${pet.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--gold);">${pet.cost} 🪙</div>
+                        ${isOwned ? '<span style="color: var(--success); font-size: 0.8rem; display:block; margin-top:4px;">Adquirido</span>' : `<button class="btn" style="padding: 4px 8px; font-size: 0.75rem; margin-top:4px;" onclick="buyPet('${pet.id}', ${pet.cost})">Adoptar</button>`}
+                    </div>
+                `;
+                if (pet.special) specialGrid.innerHTML += html;
+                else standardGrid.innerHTML += html;
+            });
+            renderPetSelectors();
+        }
+
+        function renderPetSelectors() {
+            const pomoSel = document.getElementById('select-pomo-pet');
+            const stopSel = document.getElementById('select-stop-pet');
+            if(!pomoSel || !stopSel) return;
+
+            pomoSel.innerHTML = '<option value="">-- Sin Mascota --</option>';
+            stopSel.innerHTML = '<option value="">-- Sin Mascota --</option>';
+
+            ownedPets.forEach(id => {
+                let p = petsData.find(x => x.id === id);
+                if(p) {
+                    let pomoSelected = currentPomoPet && currentPomoPet.id === id ? 'selected' : '';
+                    let stopSelected = currentStopPet && currentStopPet.id === id ? 'selected' : '';
+                    pomoSel.innerHTML += `<option value="${id}" ${pomoSelected}>${p.emoji} ${p.name}</option>`;
+                    stopSel.innerHTML += `<option value="${id}" ${stopSelected}>${p.emoji} ${p.name}</option>`;
+                }
+            });
+        }
+
+        function changePomoPet() {
+            const val = document.getElementById('select-pomo-pet').value;
+            if(!val) { currentPomoPet = null; }
+            else {
+                let found = petsData.find(p => p.id === val);
+                currentPomoPet = { ...found };
+            }
+            localStorage.setItem('timepro_pomo_pet', JSON.stringify(currentPomoPet));
+            updatePetDisplay();
+        }
+
+        function changeStopPet() {
+            const val = document.getElementById('select-stop-pet').value;
+            if(!val) { currentStopPet = null; }
+            else {
+                let found = petsData.find(p => p.id === val);
+                currentStopPet = { ...found };
+            }
+            localStorage.setItem('timepro_stop_pet', JSON.stringify(currentStopPet));
+            updateStopBuddyAnimation(false);
+        }
+
+        function buyPet(petId, cost) {
+            if (userCoins >= cost) {
+                userCoins -= cost;
+                updateCoinsDisplay();
+                ownedPets.push(petId);
+                localStorage.setItem('timepro_owned_pets', JSON.stringify(ownedPets));
+                if(!currentPomoPet) { currentPomoPet = { ...petsData.find(p => p.id === petId) }; localStorage.setItem('timepro_pomo_pet', JSON.stringify(currentPomoPet)); }
+                renderPetShop();
+                updatePetDisplay();
+                updateAccountCode();
+                alert("🐾 ¡Mascota adoptada con éxito!");
+            } else { alert("❌ No tienes suficientes monedas. ¡Estudia con el temporizador para ganar monedas, aquí no usamos dinero real!"); }
+        }
+
+        function updatePetDisplay() {
+            if (!currentPomoPet) {
+                document.getElementById('pet-name').innerText = "Sin Mascota en Pomodoro";
+                let emojiBox = document.getElementById('pet-emoji');
+                emojiBox.className = "pet-avatar pet-stage-baby";
+                emojiBox.innerText = "🥚";
+                document.getElementById('pet-status-text').innerText = "Selecciona tu mascota arriba";
+                return;
+            }
+            document.getElementById('pet-name').innerText = currentPomoPet.name;
+            let mins = getActivePetMinutes(currentPomoPet.id);
+            let ageInfo = getPetAgeInfo(mins);
+            
+            let emojiBox = document.getElementById('pet-emoji');
+            emojiBox.className = `pet-avatar ${ageInfo.stageClass}`;
+            emojiBox.innerText = currentPomoPet.emoji;
+            document.getElementById('pet-status-text').innerText = `¡Te acompaña! Edad: ${ageInfo.age} años (${ageInfo.stage})`;
+            
+            document.getElementById('stat-hunger').innerText = petStats.hunger;
+            document.getElementById('bar-hunger').style.width = petStats.hunger + "%";
+            document.getElementById('stat-happy').innerText = petStats.happy;
+            document.getElementById('bar-happy').style.width = petStats.happy + "%";
+            document.getElementById('stat-sleep').innerText = petStats.sleep;
+            document.getElementById('bar-sleep').style.width = petStats.sleep + "%";
+            document.getElementById('stat-mood').innerText = petStats.mood;
+            document.getElementById('bar-mood').style.width = petStats.mood + "%";
+            
+            localStorage.setItem('timepro_pet_stats', JSON.stringify(petStats));
+            updateBuddyAnimation(false);
+        }
+
+        function claimQuest(questId, reward) {
+            if (questId === 1) {
+                let totalStudyMinutes = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+                if (totalStudyMinutes >= 25) {
+                    userCoins += reward;
+                    updateCoinsDisplay();
+                    alert(`✅ ¡Misión reclamada! +${reward} Monedas.`);
+                    document.getElementById('quest-btn-1').disabled = true;
+                    document.getElementById('quest-btn-1').innerText = "Reclamado";
+                } else { alert("⏳ Aún no completas al menos 25 min hoy."); }
+            } else if (questId === 2) {
+                let done = localStorage.getItem('timepro_quest2_done');
+                if (done === 'true') {
+                    userCoins += reward;
+                    updateCoinsDisplay();
+                    alert(`✅ ¡Misión reclamada! +${reward} Monedas.`);
+                    document.getElementById('quest-btn-2').disabled = true;
+                    document.getElementById('quest-btn-2').innerText = "Reclamado";
+                } else { alert("⏳ Primero alimenta a tu mascota."); }
+            }
+        }
+
+        function openDailySurprise() {
+            let lastSurprise = localStorage.getItem('timepro_last_surprise') || 0;
+            let now = Date.now();
+            let oneDay = 24 * 60 * 60 * 1000;
+            if (now - lastSurprise < oneDay) {
+                alert("⏳ Ya abriste tu sorpresa hoy. ¡Regresa mañana!");
+                return;
+            }
+            localStorage.setItem('timepro_last_surprise', now);
+            let rewardCoins = Math.floor(Math.random() * 11) + 10;
+            userCoins += rewardCoins;
+            updateCoinsDisplay();
+            document.getElementById('surprise-element').innerText = "🐣✨";
+            document.getElementById('surprise-status').innerText = `¡Eclosionó! Un tierno pollito te trajo ${rewardCoins} Monedas.`;
+        }
+
+        const motivationalCards = [
+            { id: 1, title: "Ficha 1: El Esfuerzo Diario", quote: "“Cada concepto que hoy te cuesta entender, mañana será la herramienta que le salve la vida a un paciente.”" },
+            { id: 2, title: "Ficha 2: Carácter y Resiliencia", quote: "“La carrera exige constancia. Estás construyendo al profesional brillante que el mundo necesita.”" },
+            { id: 3, title: "Ficha 3: Constancia", quote: "“El éxito no es de quien no comete errores, sino de quien repasa una y otra vez.”" },
+            { id: 4, title: "Ficha 4: Tu Futuro", quote: "“Imagina el día que alcances la meta. Cada hora de enfoque te acerca más a ese sueño.”" }
+        ];
+
+        let unlockedCards = JSON.parse(localStorage.getItem('timepro_unlocked_cards')) || [];
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            if(!container) return;
+            container.innerHTML = "";
+            motivationalCards.forEach(card => {
+                let isUnlocked = unlockedCards.includes(card.id);
+                container.innerHTML += `
+                    <div class="shop-card">
+                        <div>
+                            <strong>${card.title}</strong>
+                            ${isUnlocked ? `<div class="card-unlocked">${card.quote}</div>` : `<p style="font-size: 0.85rem; margin-top: 5px;">Bloqueado</p>`}
+                        </div>
+                        <div>
+                            ${isUnlocked ? '<span style="color: var(--success); font-weight: bold;">✔ Desbloqueado</span>' : `<button class="btn" style="margin-top:0;" onclick="buyCard(${card.id}, 15)">Comprar (15 🪙)</button>`}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function buyCard(cardId, cost) {
+            if (userCoins >= cost) {
+                userCoins -= cost;
+                updateCoinsDisplay();
+                unlockedCards.push(cardId);
+                localStorage.setItem('timepro_unlocked_cards', JSON.stringify(unlockedCards));
+                renderShop();
+                updateAccountCode();
+                alert("🎁 ¡Ficha de motivación desbloqueada!");
+            } else { alert("❌ No tienes suficientes monedas. ¡Estudia con el temporizador para ganar monedas, aquí no usamos dinero real!"); }
+        }
+
+        function updateStatsDisplay() {
+            let totalStudyMinutes = parseInt(localStorage.getItem('timepro_minutes')) || 0;
+            document.getElementById('stat-total-min').innerText = `${totalStudyMinutes} min`;
+            document.getElementById('stat-total-blocks').innerText = Math.floor(totalStudyMinutes / 25);
+            document.getElementById('stat-current-streak').innerText = `${userStreak} días`;
+            document.getElementById('stat-active-pet').innerText = currentPomoPet ? currentPomoPet.name : 'Ninguna';
+            document.getElementById('stat-trophies-count').innerText = `${claimedTrophies.length} / 6`;
+            document.getElementById('stat-cards-count').innerText = `${unlockedCards.length} / 4`;
+        }
+
+        const trophiesList = [
+            { id: 't1', type: 'Corto Plazo', title: "Primeros Pasos", desc: "Completa tu primer bloque de estudio (+10 🪙)", reward: 10, check: () => (parseInt(localStorage.getItem('timepro_minutes')) || 0) >= 25 },
+            { id: 't2', type: 'Corto Plazo', title: "Buen Provecho", desc: "Alimenta a tu mascota por primera vez (+5 🪙)", reward: 5, check: () => ownedPets.length > 0 && petStats.hunger > 100 },
+            { id: 't3', type: 'Mediano Plazo', title: "Coleccionista de Compañeros", desc: "Adopta 3 mascotas diferentes (+25 🪙)", reward: 25, check: () => ownedPets.length >= 3 },
+            { id: 't4', type: 'Mediano Plazo', title: "Filósofo de la Motivación", desc: "Desbloquea 2 fichas de motivación (+20 🪙)", reward: 20, check: () => unlockedCards.length >= 2 },
+            { id: 't5', type: 'Largo Plazo', title: "Maratonista del Enfoque", desc: "Acumula 300 minutos de estudio (+50 🪙)", reward: 50, check: () => (parseInt(localStorage.getItem('timepro_minutes')) || 0) >= 300 },
+            { id: 't6', type: 'Largo Plazo', title: "Maestro del Tiempo", desc: "Alcanza el rango de Experto en Enfoque o superior (+100 🪙)", reward: 100, check: () => (parseInt(localStorage.getItem('timepro_minutes')) || 0) >= 400 }
+        ];
+
+        let claimedTrophies = JSON.parse(localStorage.getItem('timepro_claimed_trophies')) || [];
+
+        function renderTrophies() {
+            let container = document.getElementById('trophies-container');
+            if(!container) return;
+            container.innerHTML = "";
+            trophiesList.forEach(t => {
+                let unlocked = t.check();
+                let claimed = claimedTrophies.includes(t.id);
+                container.innerHTML += `
+                    <div class="trophy-card" style="border-color: ${unlocked ? 'var(--success)' : 'var(--border)'}">
+                        <div>
+                            <span style="font-size:0.75rem; color:var(--gold); font-weight:bold;">[${t.type.toUpperCase()}]</span>
+                            <strong style="display:block; color: ${unlocked ? 'var(--success)' : 'var(--text)'}">${unlocked ? '🏆' : '🔒'} ${t.title}</strong>
+                            <p style="font-size: 0.88rem; margin-top: 3px;">${t.desc}</p>
+                        </div>
+                        <div>
+                            ${claimed ? '<span style="color: var(--success); font-weight: bold;">Reclamado</span>' : unlocked ? `<button class="btn" style="padding: 6px 12px; margin-top:0;" onclick="claimTrophy('${t.id}', ${t.reward})">Reclamar Recompensa</button>` : '<span style="color: var(--text-muted);">Bloqueado</span>'}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function claimTrophy(id, reward) {
+            if (!claimedTrophies.includes(id)) {
+                claimedTrophies.push(id);
+                userCoins += reward;
+                updateCoinsDisplay();
+                localStorage.setItem('timepro_claimed_trophies', JSON.stringify(claimedTrophies));
+                renderTrophies();
+                alert(`🏆 ¡Trofeo reclamado! Has ganado ${reward} Monedas.`);
+            }
+        }
+
+        function checkTrophies() { renderTrophies(); }
+
+        const postItColors = [
+            { name: 'Amarillo', bg: '#fef08a', text: '#713f12' },
+            { name: 'Azul', bg: '#bae6fd', text: '#0369a1' },
+            { name: 'Rojo', bg: '#fecaca', text: '#991b1b' },
+            { name: 'Negro', bg: '#1f2937', text: '#f3f4f6' },
+            { name: 'Blanco', bg: '#ffffff', text: '#111827' }
+        ];
+
+        let postIts = JSON.parse(localStorage.getItem('timepro_postits')) || [{ id: 1, text: '¡Repasar conceptos clave antes del examen!', colorIdx: 0 }];
+
+        function renderPostIts() {
+            let container = document.getElementById('postits-container');
+            if(!container) return;
+            container.innerHTML = "";
+            postIts.forEach(p => {
+                let theme = postItColors[p.colorIdx] || postItColors[0];
+                container.innerHTML += `
+                    <div class="postit-card" style="background-color: ${theme.bg}; color: ${theme.text};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <select onchange="changePostItColor(${p.id}, this.value)" style="background:rgba(0,0,0,0.08); color:${theme.text}; border:none; padding:2px; border-radius:4px; font-size:0.7rem;">
+                                ${postItColors.map((c, idx) => `<option value="${idx}" ${idx === p.colorIdx ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
+                            <button onclick="deletePostIt(${p.id})" style="background:transparent; border:none; color:${theme.text}; cursor:pointer; font-weight:bold;">×</button>
+                        </div>
+                        <textarea class="postit-textarea" style="color:${theme.text};" oninput="updatePostItText(${p.id}, this.value)">${p.text}</textarea>
+                    </div>
+                `;
+            });
+            localStorage.setItem('timepro_postits', JSON.stringify(postIts));
+        }
+
+        function addPostIt() {
+            postIts.push({ id: Date.now(), text: 'Nuevo pendiente...', colorIdx: Math.floor(Math.random() * postItColors.length) });
+            renderPostIts();
+        }
+
+        function updatePostItText(id, text) {
+            let item = postIts.find(p => p.id === id);
+            if(item) { item.text = text; localStorage.setItem('timepro_postits', JSON.stringify(postIts)); }
+        }
+
+        function changePostItColor(id, idx) {
+            let item = postIts.find(p => p.id === id);
+            if(item) { item.colorIdx = parseInt(idx); renderPostIts(); }
+        }
+
+        function deletePostIt(id) {
+            postIts = postIts.filter(p => p.id !== id);
+            renderPostIts();
+        }
+
+        window.onload = function() {
+            let savedTheme = localStorage.getItem('timepro_theme') || 'default';
+            setTheme(savedTheme);
+            updateCoinsDisplay();
+            renderPetShop();
+            renderFoodShop();
+            updatePetDisplay();
+            updatePomodoroDisplay();
+            renderShop();
+            renderAccessoriesShop();
+            renderTrophies();
+            renderPostIts();
+            updateStatsDisplay();
+            updateRenameCostText();
+            updateStopBuddyAnimation(false);
+            updateAccountCode();
+        };
+    </script>
+</body>
+</html>
